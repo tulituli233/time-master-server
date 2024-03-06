@@ -14,13 +14,12 @@ app.use(express.urlencoded({
 }))
 
 //响应数据的中间件
+// code 1 成功 0 失败
 app.use(function (req, res, next) {
-    res.cc = function (err, status = 444,data='') {
+    res.cc = function (err, code = 1, data='') {
         res.send({
-            meta: {
-                status,
-                message: err instanceof Error ? err.message : err
-            },
+            code,
+            msg: err instanceof Error ? err.message : err,
             data
         })
     }
@@ -42,20 +41,17 @@ app.use('/uploads', express.static('./uploads'));
 
 const { UnauthorizedError } = require('express-jwt/lib');
 //导入自定义路由模块
+// 用户
 const userRouter = require('./router/user');
 app.use('/users', userRouter);
 
-// const userinfoRouter = require('./router/userinfo');
-// app.use('/my', userinfoRouter);
+// 账单
+const expensesRouter = require('./router/expenses');
+app.use('/expenses', expensesRouter);
 
-// const cartRouter = require('./router/cart');
-// app.use('/my/cart', cartRouter);
-
-// const homeRouter = require('./router/home');
-// app.use('/my/home', homeRouter);
-
-// const ordersRouter = require('./router/orders');
-// app.use('/my/orders', ordersRouter);
+// 事项、规划
+const taskRouter = require('./router/tasks');
+app.use('/tasks', taskRouter);
 
 // app.use(function (err, req, res, next) {//错误级别中间件
 //     if (err instanceof joi.ValidationError) return res.cc(err);
