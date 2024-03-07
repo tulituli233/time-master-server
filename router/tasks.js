@@ -8,5 +8,7 @@ const expressJoi=require('@escook/express-joi');
 router.post('/add',tasksHander.addTask);
 // 查询tasks
 router.get('/list',tasksHander.getTasks);
+// 修改tasks
+router.post('/update',tasksHander.updateTask);
 
 module.exports=router;
