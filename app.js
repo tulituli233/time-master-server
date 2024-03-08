@@ -50,8 +50,12 @@ const expensesRouter = require('./router/expenses');
 app.use('/expenses', expensesRouter);
 
 // 事项、规划
-const taskRouter = require('./router/tasks');
-app.use('/tasks', taskRouter);
+const tasksRouter = require('./router/tasks');
+app.use('/tasks', tasksRouter);
+
+// 备忘录
+const memoRouter = require('./router/memos');
+app.use('/memos', memoRouter);
 
 // app.use(function (err, req, res, next) {//错误级别中间件
 //     if (err instanceof joi.ValidationError) return res.cc(err);
