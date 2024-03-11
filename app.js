@@ -61,6 +61,14 @@ app.use('/memos', memoRouter);
 const waterRouter = require('./router/water');
 app.use('/water', waterRouter);
 
+// 日记
+const diaryRouter = require('./router/diary');
+app.use('/diary', diaryRouter);
+
+// 倒计时
+const countdownRouter = require('./router/countdown');
+app.use('/countdown', countdownRouter);
+
 // app.use(function (err, req, res, next) {//错误级别中间件
 //     if (err instanceof joi.ValidationError) return res.cc(err);
 //     if (err.name === 'UnauthorizedError') return res.cc('身份认证失败1！')
