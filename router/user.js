@@ -5,10 +5,8 @@ const userHander=require('../router_handler/user');
 const expressJoi=require('@escook/express-joi');
 const {reg_login_schema}=require('../schema/user');
 
-// router.get('/reguser',expressJoi(reg_login_schema),userHander.regUser);
+router.post('/reguster', userHander.reguster);
 
-router.post('/reguser',expressJoi(reg_login_schema),userHander.regUser);
-
-router.post('/login',expressJoi(reg_login_schema),userHander.login);
+router.post('/login', userHander.login);
 
 module.exports=router;
