@@ -1,18 +1,28 @@
 const db = require('../db/index');
 const fs = require('fs');
+const jschardet = require('jschardet');
+
+// 读取文件并检测文件编码
+const detectEncoding = (filePath) => {
+    const data = fs.readFileSync(filePath);
+    const result = jschardet.detect(data);
+    const encoding = result.encoding;
+    const confidence = result.confidence;
+    return { encoding, confidence };
+}
 
 // 上传txt文件并保存小说章节内容
-const uploadBook = (novelID, filePath, res) => {
-    fs.readFile(filePath, 'utf8', (err, data) => {
+const uploadBook = (novelID, filePath, encoding, res) => {
+    fs.readFile(filePath, encoding, (err, data) => {
         if (err) {
             console.error('Error reading file:', err);
             return res.cc(err, 0);
         }
         // 使用正则表达式匹配章节标题
         const chapters = data.split(/第(?:[零一二三四五六七八九十百千\d]+)章/g);
-        // console.log('chapters=====', chapters);
+        console.log('chapters size=====', Buffer.byteLength(chapters[0]));
         // 去掉第一个空内容
-        chapters.shift();
+        // chapters.shift();
         // 重新在每个章节开头加上章节标题
         let formattedChapters = [];
         chapters.forEach((chapter, index) => {
@@ -68,14 +78,39 @@ const uploadBook = (novelID, filePath, res) => {
                     }
                 }
             });
-
         });
     });
 }
 
+// 章节分割
+const splitChapter = (chapter) => {
+    const splitChapters = [];
+    while (Buffer.byteLength(chapter) > 20000) {
+        const splitChapter = chapter.slice(0, 20000);
+        splitChapters.push(splitChapter);
+        chapter = chapter.slice(20000);
+    }
+    if (chapter.length > 0) {
+        splitChapters.push(chapter); // Add the remaining part as a separate chapter
+    }
+    return splitChapters;
+}
 
 // 创建小说
 exports.createNovel = (req, res) => {
+    console.log('req.file=====', req.file);
+    const { encoding, confidence } = detectEncoding(req.file.path);
+
+    if (encoding === 'UTF-16LE') {
+        console.log('The file is using UTF-16LE encoding.');
+    } else if (encoding === 'UTF-8') {
+        console.log('The file is using UTF-8 encoding.');
+    } else {
+        console.log('The file encoding is unknown.');
+        // 删除上传的文件
+        fs.unlinkSync(req.file.path);
+        return res.cc('文件编码不支持', 0);
+    }
     // 去掉.txt
     const title = req.file.originalname.slice(0, -4);
     const author = '未知';
@@ -87,7 +122,7 @@ exports.createNovel = (req, res) => {
         } else {
             console.log('Novel created successfully:', result.insertId);
             const filePath = req.file.path; // 请替换成实际的文件路径
-            uploadBook(result.insertId, filePath, res);
+            uploadBook(result.insertId, filePath, encoding, res);
         }
     });
 }
@@ -103,40 +138,27 @@ exports.getNovels = (req, res) => {
     })
 }
 
-// 获取小说章节
+// 根据小说ID和ChapterNumber获取小说章节
 exports.getNovelChapter = (req, res) => {
-    if (req.query.ChapterID) {
-        const sql = 'select * from NovelChapters where ChapterID=?';
-        db.query(sql, req.query.ChapterID, (err, results) => {
-            if (err) {
-                return res.cc(err, 0);
-            }
-            console.log('results=====', results);
-            res.cc('获取数据成功', 1, results);
-        });
-    } else if (req.query.NovelID) {
-        const sql = 'select * from NovelChapters where NovelID=? and ChapterNumber=1';
-        db.query(sql, req.query.NovelID, (err, results) => {
-            if (err) {
-                return res.cc(err, 0);
-            }
-            res.cc('获取数据成功', 1, results);
-        });
-    } else {
-        // Handle case when neither chapterID nor novelID is provided
-        res.cc('参数错误', 0);
-    }
+    const sql = 'select * from NovelChapters where NovelID=? and ChapterNumber=?';
+    console.log('req.query=====', req.query);
+    db.query(sql, [req.query.NovelID, req.query.ChapterNumber], (err, results) => {
+        if (err) {
+            return res.cc(err, 0);
+        }
+        res.cc('获取数据成功', 1, results)
+    })
 }
 
 // 获取小说目录
 exports.getNovelChapters = (req, res) => {
-    // 只要小说章节的ChapterID，ChapterTitle，ChapterNumber
-    const sql = 'select ChapterID, ChapterTitle, ChapterNumber from NovelChapters where NovelID=?';
+    // 只要小说章节的ChapterID，ChapterTitle，ChapterNumber并且按照ChapterNumber升序排列
+    const sql = 'select ChapterID, ChapterTitle, ChapterNumber from NovelChapters where NovelID=? order by ChapterNumber asc';
+    // const sql = 'select ChapterID, ChapterTitle, ChapterNumber from NovelChapters where NovelID=?';
     db.query(sql, req.query.NovelID, (err, results) => {
         if (err) {
             return res.cc(err, 0);
         }
-        console.log('getNovelChapters-results=====', results);
         res.cc('获取数据成功', 1, results)
     })
 }
