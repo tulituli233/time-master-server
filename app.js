@@ -115,30 +115,6 @@ app.post('/upload', (req, res) => {
     res.end('ok')
 })
 
-// txt读取测试
-// const fs = require('fs');
-const jschardet = require('jschardet');
-
-function detectEncoding(filePath) {
-    const data = fs.readFileSync(filePath);
-    const result = jschardet.detect(data);
-    const encoding = result.encoding;
-    const confidence = result.confidence;
-    return { encoding, confidence };
-}
-
-// 使用示例
-const filePath = './uploads/1710679893122-我的姐姐是大明星.txt';
-const { encoding, confidence } = detectEncoding(filePath);
-
-if (encoding === 'UTF-16LE') {
-    console.log('The file is using UTF-16LE encoding.');
-} else if (encoding === 'UTF-8') {
-    console.log('The file is using UTF-8 encoding.');
-} else {
-    console.log('The file encoding is unknown.');
-}
-
 app.listen(3838, () => {
     console.log('api 在3838上运行...');
 })

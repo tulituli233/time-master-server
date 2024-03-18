@@ -27,4 +27,7 @@ router.get('/chapter', bookHander.getNovelChapter);
 // 获取小说目录
 router.get('/chapters', bookHander.getNovelChapters);
 
+// 更新小说章节
+router.post('/updateChapter', bookHander.updateNovelChapter);
+
 module.exports = router;

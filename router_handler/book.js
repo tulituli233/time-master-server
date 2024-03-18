@@ -21,8 +21,6 @@ const uploadBook = (novelID, filePath, encoding, res) => {
         // 使用正则表达式匹配章节标题
         const chapters = data.split(/第(?:[零一二三四五六七八九十百千\d]+)章/g);
         console.log('chapters size=====', Buffer.byteLength(chapters[0]));
-        // 去掉第一个空内容
-        // chapters.shift();
         // 重新在每个章节开头加上章节标题
         let formattedChapters = [];
         chapters.forEach((chapter, index) => {
@@ -45,17 +43,15 @@ const uploadBook = (novelID, filePath, encoding, res) => {
             }
         });
         console.log('formattedChapters.length=====', formattedChapters.length);
-        // console.log('formattedChapters=====', formattedChapters[0]);
-        // console.log('formattedChapters=====', formattedChapters[1]);
         // 保存每个章节到数据库
         const totalChapters = formattedChapters.length;
         let savedChapters = 0;
         formattedChapters.forEach((chapter, index) => {
             // 使用正则表达式匹配章节标题,例如：第1章 开始 
             const chapterTitleMatch = chapter.match(/第(?:[零一二三四五六七八九十百千\d]+)章\s*(\S{1,20})/);
-            console.log('chapterTitleMatch=====', chapterTitleMatch[1]);
+            // console.log('chapterTitleMatch=====', chapterTitleMatch[1]);
             // 一共有多少章
-            console.log('chapters.index=====', index);
+            // console.log('chapters.index=====', index);
             const chapterTitle = chapterTitleMatch[1] || '未知章节';
             // const chapterContent = chapter.replace(chapterTitle, '').trim();
             const chapterData = {
@@ -69,14 +65,20 @@ const uploadBook = (novelID, filePath, encoding, res) => {
                     console.error('Error saving chapter:', err);
                     res.cc(err, 0);
                     return;
-                } else {
-                    // console.log('Chapter saved:', result.insertId);
-                    savedChapters++;
-                    if (savedChapters === totalChapters) {
-                        console.log('All chapters saved successfully');
-                        res.cc('小说上传成功', 1);
-                    }
                 }
+                console.log('Chapter saved:', result);
+                if (result.affectedRows !== 1) {
+                    console.error('Error saving chapter:', result);
+                    return;
+                }
+                // console.log('Chapter saved:', result.insertId);
+                savedChapters++;
+                if (savedChapters === totalChapters) {
+                    console.log('All chapters saved successfully');
+                    fs.unlinkSync(filePath);
+                    res.cc('小说上传成功', 1);
+                }
+
             });
         });
     });
@@ -98,7 +100,7 @@ const splitChapter = (chapter) => {
 
 // 创建小说
 exports.createNovel = (req, res) => {
-    console.log('req.file=====', req.file);
+    // console.log('req.file=====', req.file);
     const { encoding, confidence } = detectEncoding(req.file.path);
 
     if (encoding === 'UTF-16LE') {
@@ -140,8 +142,8 @@ exports.getNovels = (req, res) => {
 
 // 根据小说ID和ChapterNumber获取小说章节
 exports.getNovelChapter = (req, res) => {
+    // console.log('req.query=====', req.query);
     const sql = 'select * from NovelChapters where NovelID=? and ChapterNumber=?';
-    console.log('req.query=====', req.query);
     db.query(sql, [req.query.NovelID, req.query.ChapterNumber], (err, results) => {
         if (err) {
             return res.cc(err, 0);
@@ -154,11 +156,25 @@ exports.getNovelChapter = (req, res) => {
 exports.getNovelChapters = (req, res) => {
     // 只要小说章节的ChapterID，ChapterTitle，ChapterNumber并且按照ChapterNumber升序排列
     const sql = 'select ChapterID, ChapterTitle, ChapterNumber from NovelChapters where NovelID=? order by ChapterNumber asc';
-    // const sql = 'select ChapterID, ChapterTitle, ChapterNumber from NovelChapters where NovelID=?';
     db.query(sql, req.query.NovelID, (err, results) => {
         if (err) {
             return res.cc(err, 0);
         }
         res.cc('获取数据成功', 1, results)
+    })
+}
+
+// 根据chapterID修改小说章节内容
+exports.updateNovelChapter = (req, res) => {
+    console.log('req.body=====', req.body);
+    const sql = 'update NovelChapters set ChapterContent=? where ChapterID=?';
+    db.query(sql, [req.body.ChapterContent, req.body.ChapterID], (err, results) => {
+        if (err) {
+            return res.cc(err, 0);
+        }
+        if (results.affectedRows !== 1) {
+            return res.cc('修改失败', 0);
+        }
+        res.cc('修改成功', 1)
     })
 }
