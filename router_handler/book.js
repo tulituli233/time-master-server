@@ -20,11 +20,9 @@ const uploadBook = (novelID, filePath, encoding, res) => {
         }
         // 使用正则表达式匹配章节标题
         const chapters = data.split(/第(?:[零一二三四五六七八九十百千\d]+)章/g);
-        console.log('chapters size=====', Buffer.byteLength(chapters[0]));
         // 重新在每个章节开头加上章节标题
         let formattedChapters = [];
         chapters.forEach((chapter, index) => {
-            console.log('Buffer.byteLength(chapter)=====', Buffer.byteLength(chapter));
             if (Buffer.byteLength(chapter) > 30000) {
                 const splitChapters = [];
                 while (Buffer.byteLength(chapter) > 20000) {
@@ -42,7 +40,6 @@ const uploadBook = (novelID, filePath, encoding, res) => {
                 formattedChapters.push('第' + (index + 1) + '章' + chapter);
             }
         });
-        console.log('formattedChapters.length=====', formattedChapters.length);
         // 保存每个章节到数据库
         const totalChapters = formattedChapters.length;
         let savedChapters = 0;
@@ -166,7 +163,7 @@ exports.getNovelChapters = (req, res) => {
 
 // 根据chapterID修改小说章节内容
 exports.updateNovelChapter = (req, res) => {
-    console.log('req.body=====', req.body);
+    // console.log('req.body=====', req.body);
     const sql = 'update NovelChapters set ChapterContent=? where ChapterID=?';
     db.query(sql, [req.body.ChapterContent, req.body.ChapterID], (err, results) => {
         if (err) {
