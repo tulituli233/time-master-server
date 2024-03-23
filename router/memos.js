@@ -8,5 +8,9 @@ const expressJoi=require('@escook/express-joi');
 router.get('/list',memosHander.getMemos);
 // 增加memos
 router.post('/add',memosHander.addMemos);
+// 修改memos
+router.post('/update',memosHander.updateMemos);
+// 删除memos
+router.get('/delete',memosHander.deleteMemos);
 
 module.exports=router;
